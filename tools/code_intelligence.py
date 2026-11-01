@@ -1,31 +1,36 @@
 import subprocess
 from pathlib import Path
-from core.ast_parser import traverse, node_text
+from core.ast_parser import traverse, node_text, get_node_types
 from core.index import get_tree
+
+_SUPPORTED_EXTENSIONS = {".py", ".js", ".ts", ".java"}
 
 
 def _load(path: str):
     p = Path(path)
     if not p.exists():
-        return None, None, f"File does not exist: {path}"
+        return None, None, None, f"File does not exist: {path}"
+    if p.suffix not in _SUPPORTED_EXTENSIONS:
+        return None, None, None, f"Unsupported file type: {p.suffix}"
     source = p.read_text(encoding="utf-8")
     tree = get_tree(str(p), source)
-    return tree, source, None
+    return tree, source, p.suffix, None
 
 
 def find_symbol(path: str, name: str) -> dict:
     """Find where a function or class named `name` is defined in a file."""
-    tree, source, err = _load(path)
+    tree, source, ext, err = _load(path)
     if err:
         return {"error": err}
 
+    node_types = get_node_types(ext)
     results = []
-    for node_type in ("function_definition", "class_definition"):
+    for kind, node_type in [("function", node_types["function"]), ("class", node_types["class"])]:
         for node in traverse(tree.root_node, node_type):
             name_node = node.child_by_field_name("name")
             if node_text(name_node) == name:
                 results.append({
-                    "type": node_type.replace("_definition", ""),
+                    "type": kind,
                     "name": name,
                     "line": node.start_point[0] + 1,
                     "file": path,
@@ -35,39 +40,50 @@ def find_symbol(path: str, name: str) -> dict:
 
 
 def get_references(directory: str, name: str) -> dict:
-    """Find all call sites of `name` across all Python files in a directory."""
+    """Find all call sites of `name` across all supported files in a directory."""
     p = Path(directory)
     if not p.exists():
         return {"error": f"Directory does not exist: {directory}"}
 
     references = []
-    for file in p.rglob("*.py"):
-        source = file.read_text(encoding="utf-8")
-        tree = get_tree(str(file), source)
+    for ext in _SUPPORTED_EXTENSIONS:
+        for file in p.rglob(f"*{ext}"):
+            source = file.read_text(encoding="utf-8")
+            tree = get_tree(str(file), source)
+            node_types = get_node_types(ext)
+            call_type = node_types.get("call", "call")
 
-        for node in traverse(tree.root_node, "call"):
-            func_node = node.child_by_field_name("function")
-            if func_node:
-                # handle both plain calls (foo) and attribute calls (obj.foo)
-                func_name = node_text(func_node).split(".")[-1]
-                if func_name == name:
-                    references.append({
-                        "file": str(file),
-                        "line": node.start_point[0] + 1,
-                        "call": node_text(func_node),
-                    })
+            for node in traverse(tree.root_node, call_type):
+                func_node = node.child_by_field_name("function") or node.child_by_field_name("name")
+                if func_node:
+                    func_name = node_text(func_node).split(".")[-1]
+                    if func_name == name:
+                        references.append({
+                            "file": str(file),
+                            "line": node.start_point[0] + 1,
+                            "call": node_text(func_node),
+                        })
 
     return {"symbol": name, "references": references, "count": len(references)}
 
 
 def get_imports(path: str) -> dict:
-    """List all import statements in a Python file."""
-    tree, source, err = _load(path)
+    """List all import statements in a file."""
+    tree, source, ext, err = _load(path)
     if err:
         return {"error": err}
 
+    if ext == ".py":
+        import_types = ("import_statement", "import_from_statement")
+    elif ext in (".js", ".ts"):
+        import_types = ("import_statement",)
+    elif ext == ".java":
+        import_types = ("import_declaration",)
+    else:
+        import_types = ()
+
     imports = []
-    for node_type in ("import_statement", "import_from_statement"):
+    for node_type in import_types:
         for node in traverse(tree.root_node, node_type):
             imports.append({
                 "type": node_type,
@@ -101,10 +117,12 @@ def run_tests(path: str) -> dict:
 
 
 def get_lint_errors(path: str) -> dict:
-    """Run flake8 on a file and return lint errors."""
+    """Run flake8 on a Python file and return lint errors."""
     p = Path(path)
     if not p.exists():
         return {"error": f"File does not exist: {path}"}
+    if p.suffix != ".py":
+        return {"error": "flake8 only supports Python files"}
 
     result = subprocess.run(
         ["python", "-m", "flake8", str(p), "--format=%(row)d:%(col)d:%(code)s:%(text)s"],
