@@ -1,5 +1,4 @@
 from mcp.server.fastmcp import FastMCP
-from core.index import start_watcher
 from tools.filesystem import list_directory, read_file, write_file, search_files
 from tools.code_intelligence import find_symbol, get_references, get_imports, run_tests, get_lint_errors
 
@@ -19,5 +18,4 @@ mcp.tool()(run_tests)
 mcp.tool()(get_lint_errors)
 
 if __name__ == "__main__":
-    start_watcher(".")
     mcp.run()
