@@ -1,15 +1,14 @@
 import re
 from pathlib import Path
+from tools import check_path
 
 
 def list_directory(path: str) -> dict:
     """List contents of a directory."""
-    p = Path(path)
-    if not p.exists():
-        return {"error": f"Path does not exist: {path}"}
-    if not p.is_dir():
-        return {"error": f"Not a directory: {path}"}
+    if err := check_path(path, "dir"):
+        return err
 
+    p = Path(path)
     items = [
         {"name": item.name, "type": "directory" if item.is_dir() else "file", "path": str(item)}
         for item in sorted(p.iterdir())
@@ -19,12 +18,10 @@ def list_directory(path: str) -> dict:
 
 def read_file(path: str) -> dict:
     """Read the full contents of a file."""
-    p = Path(path)
-    if not p.exists():
-        return {"error": f"File does not exist: {path}"}
-    if not p.is_file():
-        return {"error": f"Not a file: {path}"}
+    if err := check_path(path, "file"):
+        return err
 
+    p = Path(path)
     content = p.read_text(encoding="utf-8", errors="replace")
     return {"path": str(p), "content": content, "lines": content.count("\n") + 1}
 
@@ -39,15 +36,15 @@ def write_file(path: str, content: str) -> dict:
 
 def search_files(directory: str, pattern: str) -> dict:
     """Search for a regex pattern across all files in a directory."""
-    p = Path(directory)
-    if not p.exists():
-        return {"error": f"Directory does not exist: {directory}"}
+    if err := check_path(directory, "dir"):
+        return err
 
     try:
         regex = re.compile(pattern)
     except re.error as e:
         return {"error": f"Invalid regex pattern: {e}"}
 
+    p = Path(directory)
     matches = []
     for file in p.rglob("*"):
         if not file.is_file():

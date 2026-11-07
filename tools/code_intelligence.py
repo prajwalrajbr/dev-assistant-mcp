@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from core.ast_parser import traverse, node_text, get_node_types
 from core.index import get_tree
+from tools import check_path
 
 _SUPPORTED_EXTENSIONS = {".py", ".js", ".ts", ".java"}
 
@@ -42,10 +43,10 @@ def find_symbol(path: str, name: str) -> dict:
 
 def get_references(directory: str, name: str) -> dict:
     """Find all call sites of `name` across all supported files in a directory."""
-    p = Path(directory)
-    if not p.exists():
-        return {"error": f"Directory does not exist: {directory}"}
+    if err := check_path(directory, "dir"):
+        return err
 
+    p = Path(directory)
     references = []
     for ext in _SUPPORTED_EXTENSIONS:
         for file in p.rglob(f"*{ext}"):
@@ -98,10 +99,10 @@ def get_imports(path: str) -> dict:
 
 def run_tests(path: str) -> dict:
     """Run tests for a file or directory using the appropriate test runner."""
-    p = Path(path)
-    if not p.exists():
-        return {"error": f"Path does not exist: {path}"}
+    if err := check_path(path):
+        return err
 
+    p = Path(path)
     ext = p.suffix if p.is_file() else None
 
     if ext in (".js", ".ts") or (p.is_dir() and (p / "package.json").exists()):
@@ -131,10 +132,10 @@ def run_tests(path: str) -> dict:
 
 def get_lint_errors(path: str) -> dict:
     """Run a linter on a file and return lint errors."""
-    p = Path(path)
-    if not p.exists():
-        return {"error": f"File does not exist: {path}"}
+    if err := check_path(path, "file"):
+        return err
 
+    p = Path(path)
     if p.suffix == ".py":
         return _lint_python(p)
     elif p.suffix in (".js", ".ts"):
@@ -197,7 +198,6 @@ def _lint_java(p: Path) -> dict:
     )
     errors = []
     for line in result.stdout.strip().splitlines():
-        # format: [ERROR] /path/file.java:10:5: message [RuleName]
         if line.startswith("[ERROR]") or line.startswith("[WARN]"):
             try:
                 severity = "error" if line.startswith("[ERROR]") else "warning"
