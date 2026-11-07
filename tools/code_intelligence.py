@@ -96,19 +96,31 @@ def get_imports(path: str) -> dict:
 
 
 def run_tests(path: str) -> dict:
-    """Run pytest on a file or directory and return results."""
+    """Run tests for a file or directory using the appropriate test runner."""
     p = Path(path)
     if not p.exists():
         return {"error": f"Path does not exist: {path}"}
 
+    ext = p.suffix if p.is_file() else None
+
+    if ext in (".js", ".ts") or (p.is_dir() and (p / "package.json").exists()):
+        cmd = ["npx", "jest", str(p), "--verbose"]
+    elif ext == ".java" or (p.is_dir() and (p / "pom.xml").exists()):
+        cmd = ["mvn", "test", "-f", str(p / "pom.xml") if p.is_dir() else str(p.parent / "pom.xml")]
+    elif p.is_dir() and (p / "build.gradle").exists():
+        cmd = ["./gradlew", "test", "--project-dir", str(p)]
+    else:
+        cmd = ["python", "-m", "pytest", str(p), "-v", "--tb=short"]
+
     result = subprocess.run(
-        ["python", "-m", "pytest", str(p), "-v", "--tb=short"],
+        cmd,
         capture_output=True,
         text=True,
         timeout=60,
     )
     return {
         "path": str(p),
+        "runner": cmd[0],
         "passed": result.returncode == 0,
         "exit_code": result.returncode,
         "output": result.stdout,
