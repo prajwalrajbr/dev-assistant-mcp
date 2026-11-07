@@ -1,4 +1,5 @@
 import subprocess
+import json
 from pathlib import Path
 from core.ast_parser import traverse, node_text, get_node_types
 from core.index import get_tree
@@ -129,19 +130,27 @@ def run_tests(path: str) -> dict:
 
 
 def get_lint_errors(path: str) -> dict:
-    """Run flake8 on a Python file and return lint errors."""
+    """Run a linter on a file and return lint errors."""
     p = Path(path)
     if not p.exists():
         return {"error": f"File does not exist: {path}"}
-    if p.suffix != ".py":
-        return {"error": "flake8 only supports Python files"}
 
+    if p.suffix == ".py":
+        return _lint_python(p)
+    elif p.suffix in (".js", ".ts"):
+        return _lint_js_ts(p)
+    elif p.suffix == ".java":
+        return _lint_java(p)
+    else:
+        return {"error": f"No linter available for {p.suffix} files"}
+
+
+def _lint_python(p: Path) -> dict:
     result = subprocess.run(
         ["python", "-m", "flake8", str(p), "--format=%(row)d:%(col)d:%(code)s:%(text)s"],
         capture_output=True,
         text=True,
     )
-
     errors = []
     for line in result.stdout.strip().splitlines():
         parts = line.split(":", 3)
@@ -154,5 +163,53 @@ def get_lint_errors(path: str) -> dict:
             })
         else:
             errors.append({"raw": line})
+    return {"file": str(p), "linter": "flake8", "errors": errors, "count": len(errors)}
 
-    return {"file": str(p), "errors": errors, "count": len(errors)}
+
+def _lint_js_ts(p: Path) -> dict:
+    result = subprocess.run(
+        ["npx", "eslint", str(p), "--format", "json"],
+        capture_output=True,
+        text=True,
+    )
+    errors = []
+    try:
+        data = json.loads(result.stdout)
+        for file_result in data:
+            for msg in file_result.get("messages", []):
+                errors.append({
+                    "line": msg.get("line"),
+                    "col": msg.get("column"),
+                    "code": msg.get("ruleId", "unknown"),
+                    "message": msg.get("message"),
+                    "severity": "error" if msg.get("severity") == 2 else "warning",
+                })
+    except (json.JSONDecodeError, KeyError):
+        errors.append({"raw": result.stdout})
+    return {"file": str(p), "linter": "eslint", "errors": errors, "count": len(errors)}
+
+
+def _lint_java(p: Path) -> dict:
+    result = subprocess.run(
+        ["checkstyle", "-c", "/google_checks.xml", str(p)],
+        capture_output=True,
+        text=True,
+    )
+    errors = []
+    for line in result.stdout.strip().splitlines():
+        # format: [ERROR] /path/file.java:10:5: message [RuleName]
+        if line.startswith("[ERROR]") or line.startswith("[WARN]"):
+            try:
+                severity = "error" if line.startswith("[ERROR]") else "warning"
+                rest = line.split("] ", 1)[1]
+                location, message = rest.split(": ", 1)
+                parts = location.split(":")
+                errors.append({
+                    "line": int(parts[1]) if len(parts) > 1 else None,
+                    "col": int(parts[2]) if len(parts) > 2 else None,
+                    "message": message.strip(),
+                    "severity": severity,
+                })
+            except (IndexError, ValueError):
+                errors.append({"raw": line})
+    return {"file": str(p), "linter": "checkstyle", "errors": errors, "count": len(errors)}
