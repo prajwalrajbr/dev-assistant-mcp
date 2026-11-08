@@ -7,9 +7,10 @@ _lock = threading.Lock()
 
 
 def get_tree(path: str, source: str):
-    ext = Path(path).suffix
-    mtime = Path(path).stat().st_mtime if Path(path).exists() else None
+    p = Path(path)
+    ext = p.suffix
     with _lock:
+        mtime = p.stat().st_mtime if p.exists() else None
         if path in _cache:
             cached_mtime, tree = _cache[path]
             if cached_mtime == mtime:
