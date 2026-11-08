@@ -1,9 +1,15 @@
+import os
 import subprocess
 import json
 from pathlib import Path
+from dotenv import load_dotenv
 from core.ast_parser import traverse, node_text, get_node_types
 from core.index import get_tree
 from tools import check_path
+
+load_dotenv()
+
+_TEST_TIMEOUT = int(os.getenv("TEST_TIMEOUT", 60))
 
 _SUPPORTED_EXTENSIONS = {".py", ".js", ".ts", ".java"}
 
@@ -121,7 +127,7 @@ def run_tests(path: str) -> dict:
         cmd,
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=_TEST_TIMEOUT,
     )
     return {
         "path": str(p),
