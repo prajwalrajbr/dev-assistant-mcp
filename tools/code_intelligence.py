@@ -10,8 +10,8 @@ _SUPPORTED_EXTENSIONS = {".py", ".js", ".ts", ".java"}
 
 def _load(path: str):
     p = Path(path)
-    if not p.exists():
-        return None, None, None, f"File does not exist: {path}"
+    if err := check_path(path, "file"):
+        return None, None, None, err["error"]
     if p.suffix not in _SUPPORTED_EXTENSIONS:
         return None, None, None, f"Unsupported file type: {p.suffix}"
     source = p.read_text(encoding="utf-8")
