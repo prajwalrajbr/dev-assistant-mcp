@@ -50,21 +50,24 @@ def get_references(directory: str, name: str) -> dict:
     references = []
     for ext in _SUPPORTED_EXTENSIONS:
         for file in p.rglob(f"*{ext}"):
-            source = file.read_text(encoding="utf-8")
-            tree = get_tree(str(file), source)
-            node_types = get_node_types(ext)
-            call_type = node_types.get("call", "call")
+            try:
+                source = file.read_text(encoding="utf-8")
+                tree = get_tree(str(file), source)
+                node_types = get_node_types(ext)
+                call_type = node_types.get("call", "call")
 
-            for node in traverse(tree.root_node, call_type):
-                func_node = node.child_by_field_name("function") or node.child_by_field_name("name")
-                if func_node:
-                    func_name = node_text(func_node).split(".")[-1]
-                    if func_name == name:
-                        references.append({
-                            "file": str(file),
-                            "line": node.start_point[0] + 1,
-                            "call": node_text(func_node),
-                        })
+                for node in traverse(tree.root_node, call_type):
+                    func_node = node.child_by_field_name("function") or node.child_by_field_name("name")
+                    if func_node:
+                        func_name = node_text(func_node).split(".")[-1]
+                        if func_name == name:
+                                references.append({
+                                    "file": str(file),
+                                    "line": node.start_point[0] + 1,
+                                    "call": node_text(func_node),
+                                })
+            except Exception:
+                continue
 
     return {"symbol": name, "references": references, "count": len(references)}
 
