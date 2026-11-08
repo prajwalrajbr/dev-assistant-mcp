@@ -1,8 +1,14 @@
+import os
 from tree_sitter import Language, Parser
+from dotenv import load_dotenv
 import tree_sitter_python as tspython
 import tree_sitter_javascript as tsjavascript
 import tree_sitter_typescript as tstypescript
 import tree_sitter_java as tsjava
+
+load_dotenv()
+
+_AST_MAX_DEPTH = int(os.getenv("AST_MAX_DEPTH", 100))
 
 _LANGUAGES = {
     ".py":   Language(tspython.language()),
@@ -29,10 +35,15 @@ def parse(source: str, ext: str):
 
 def traverse(node, node_type: str) -> list:
     results = []
-    if node.type == node_type:
-        results.append(node)
-    for child in node.children:
-        results.extend(traverse(child, node_type))
+    stack = [(node, 0)]
+    while stack:
+        current, depth = stack.pop()
+        if depth > _AST_MAX_DEPTH:
+            continue
+        if current.type == node_type:
+            results.append(current)
+        for child in reversed(current.children):
+            stack.append((child, depth + 1))
     return results
 
 

@@ -4,5 +4,6 @@ tree-sitter-python
 tree-sitter-javascript
 tree-sitter-typescript
 tree-sitter-java
+python-dotenv
 flake8
 pytest
