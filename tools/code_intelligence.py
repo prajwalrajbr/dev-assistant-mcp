@@ -63,6 +63,44 @@ def find_symbol(path: str, name: str) -> dict:
     return {"symbol": name, "results": results, "count": len(results)}
 
 
+def get_symbols(path: str) -> dict:
+    """List all functions, classes, and arrow functions defined in a file."""
+    tree, source, ext, err = _load(path)
+    if err:
+        return {"error": err}
+
+    node_types = get_node_types(ext)
+    symbols = []
+
+    for kind, node_type in [("function", node_types["function"]), ("class", node_types["class"])]:
+        for node in traverse(tree.root_node, node_type):
+            name_node = node.child_by_field_name("name")
+            symbol_name = node_text(name_node)
+            if symbol_name:
+                symbols.append({
+                    "type": kind,
+                    "name": symbol_name,
+                    "line": node.start_point[0] + 1,
+                })
+
+    arrow_node_type = node_types.get("arrow")
+    if arrow_node_type:
+        for node in traverse(tree.root_node, arrow_node_type):
+            name_node = node.child_by_field_name("name")
+            value_node = node.child_by_field_name("value")
+            if value_node and value_node.type == "arrow_function":
+                symbol_name = node_text(name_node)
+                if symbol_name:
+                    symbols.append({
+                        "type": "arrow_function",
+                        "name": symbol_name,
+                        "line": node.start_point[0] + 1,
+                    })
+
+    symbols.sort(key=lambda x: x["line"])
+    return {"file": path, "symbols": symbols, "count": len(symbols)}
+
+
 def get_references(directory: str, name: str) -> dict:
     """Find all call sites of `name` across all supported files in a directory."""
     if err := check_path(directory, "dir"):
