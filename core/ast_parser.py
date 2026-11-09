@@ -18,10 +18,10 @@ _LANGUAGES = {
 }
 
 _NODE_TYPES = {
-    ".py":   {"function": "function_definition",  "class": "class_definition",  "call": "call"},
-    ".js":   {"function": "function_declaration", "class": "class_declaration", "call": "call_expression"},
-    ".ts":   {"function": "function_declaration", "class": "class_declaration", "call": "call_expression"},
-    ".java": {"function": "method_declaration",   "class": "class_declaration", "call": "method_invocation"},
+    ".py":   {"function": "function_definition",  "class": "class_definition",  "call": "call",             "constructor": None},
+    ".js":   {"function": "function_declaration", "class": "class_declaration", "call": "call_expression",  "constructor": None},
+    ".ts":   {"function": "function_declaration", "class": "class_declaration", "call": "call_expression",  "constructor": None},
+    ".java": {"function": "method_declaration",   "class": "class_declaration", "call": "method_invocation","constructor": "object_creation_expression"},
 }
 
 

@@ -61,9 +61,20 @@ def get_references(directory: str, name: str) -> dict:
                 tree = get_tree(str(file), source)
                 node_types = get_node_types(ext)
                 call_type = node_types.get("call", "call")
+                constructor_type = node_types.get("constructor")
 
-                for node in traverse(tree.root_node, call_type):
-                    func_node = node.child_by_field_name("function") or node.child_by_field_name("name")
+                # collect both method calls and constructor calls (Java: new Foo())
+                call_nodes = traverse(tree.root_node, call_type)
+                if constructor_type:
+                    call_nodes += traverse(tree.root_node, constructor_type)
+
+                for node in call_nodes:
+                    # method calls use "function"/"name"; constructors use "type"
+                    func_node = (
+                        node.child_by_field_name("function")
+                        or node.child_by_field_name("name")
+                        or node.child_by_field_name("type")
+                    )
                     if func_node:
                         func_name = node_text(func_node).split(".")[-1]
                         if func_name == name:
