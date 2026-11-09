@@ -33,12 +33,28 @@ def find_symbol(path: str, name: str) -> dict:
 
     node_types = get_node_types(ext)
     results = []
+
+    # regular function and class definitions
     for kind, node_type in [("function", node_types["function"]), ("class", node_types["class"])]:
         for node in traverse(tree.root_node, node_type):
             name_node = node.child_by_field_name("name")
             if node_text(name_node) == name:
                 results.append({
                     "type": kind,
+                    "name": name,
+                    "line": node.start_point[0] + 1,
+                    "file": path,
+                })
+
+    # JS/TS arrow functions: const foo = () => {}
+    arrow_node_type = node_types.get("arrow")
+    if arrow_node_type:
+        for node in traverse(tree.root_node, arrow_node_type):
+            name_node = node.child_by_field_name("name")
+            value_node = node.child_by_field_name("value")
+            if value_node and value_node.type == "arrow_function" and node_text(name_node) == name:
+                results.append({
+                    "type": "arrow_function",
                     "name": name,
                     "line": node.start_point[0] + 1,
                     "file": path,
