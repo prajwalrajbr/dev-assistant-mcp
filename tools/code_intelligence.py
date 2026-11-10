@@ -10,6 +10,7 @@ from tools import check_path
 load_dotenv()
 
 _TEST_TIMEOUT = int(os.getenv("TEST_TIMEOUT", 60))
+_CHECKSTYLE_CONFIG = os.getenv("CHECKSTYLE_CONFIG", "/google_checks.xml")
 
 _SUPPORTED_EXTENSIONS = {".py", ".js", ".ts", ".java"}
 
@@ -276,7 +277,7 @@ def _lint_js_ts(p: Path) -> dict:
 
 def _lint_java(p: Path) -> dict:
     result = subprocess.run(
-        ["checkstyle", "-c", "/google_checks.xml", str(p)],
+        ["checkstyle", "-c", _CHECKSTYLE_CONFIG, str(p)],
         capture_output=True,
         text=True,
     )
