@@ -26,6 +26,8 @@ _NODE_TYPES = {
 
 _PARSERS = {ext: Parser(lang) for ext, lang in _LANGUAGES.items()}
 
+SUPPORTED_EXTENSIONS = set(_LANGUAGES.keys())
+
 
 def parse(source: str, ext: str):
     parser = _PARSERS.get(ext)

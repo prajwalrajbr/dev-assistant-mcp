@@ -3,7 +3,7 @@ import subprocess
 import json
 from pathlib import Path
 from dotenv import load_dotenv
-from core.ast_parser import traverse, node_text, get_node_types
+from core.ast_parser import traverse, node_text, get_node_types, SUPPORTED_EXTENSIONS
 from core.index import get_tree
 from tools import check_path
 
@@ -12,14 +12,11 @@ load_dotenv()
 _TEST_TIMEOUT = int(os.getenv("TEST_TIMEOUT", 60))
 _CHECKSTYLE_CONFIG = os.getenv("CHECKSTYLE_CONFIG", "/google_checks.xml")
 
-_SUPPORTED_EXTENSIONS = {".py", ".js", ".ts", ".java"}
-
-
 def _load(path: str):
     p = Path(path)
     if err := check_path(path, "file"):
         return None, None, None, err["error"]
-    if p.suffix not in _SUPPORTED_EXTENSIONS:
+    if p.suffix not in SUPPORTED_EXTENSIONS:
         return None, None, None, f"Unsupported file type: {p.suffix}"
     source = p.read_text(encoding="utf-8")
     tree = get_tree(str(p), source)
@@ -109,7 +106,7 @@ def get_references(directory: str, name: str) -> dict:
 
     p = Path(directory)
     references = []
-    for ext in _SUPPORTED_EXTENSIONS:
+    for ext in SUPPORTED_EXTENSIONS:
         for file in p.rglob(f"*{ext}"):
             try:
                 source = file.read_text(encoding="utf-8")
