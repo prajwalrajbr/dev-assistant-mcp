@@ -24,12 +24,13 @@ _NODE_TYPES = {
     ".java": {"function": "method_declaration",   "class": "class_declaration", "call": "method_invocation","constructor": "object_creation_expression", "arrow": None},
 }
 
+_PARSERS = {ext: Parser(lang) for ext, lang in _LANGUAGES.items()}
+
 
 def parse(source: str, ext: str):
-    lang = _LANGUAGES.get(ext)
-    if lang is None:
+    parser = _PARSERS.get(ext)
+    if parser is None:
         raise ValueError(f"Unsupported file extension: {ext}")
-    parser = Parser(lang)
     return parser.parse(bytes(source, "utf-8"))
 
 
