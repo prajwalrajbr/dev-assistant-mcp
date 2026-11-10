@@ -388,8 +388,8 @@ class TestGetLintErrors:
 
     def test_detects_flake8_errors(self, tmp):
         f = tmp / "bad.py"
-        # E302: expected 2 blank lines
-        f.write_text("def foo(): pass\ndef bar(): pass\n")
+        # F401: imported but unused
+        f.write_text("import os\nimport sys\n")
         result = get_lint_errors(str(f))
         assert result["linter"] == "flake8"
         assert result["count"] > 0
