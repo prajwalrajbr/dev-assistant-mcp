@@ -94,6 +94,30 @@ For SSE transport (remote server already running):
 
 ### File System
 
+| Tool | Description |
+|---|---|
+| `list_directory` | List files and subdirectories inside a directory |
+| `read_file` | Read the full text content of a file |
+| `write_file` | Write content to a file, creating parent directories if needed |
+| `delete_file` | Safely move a file to the trash folder instead of permanently deleting it |
+| `move_file` | Move or rename a file, creating destination directories if needed |
+| `search_files` | Regex-search across all text files in a directory, with optional extension filter |
+
+### Code Intelligence
+
+| Tool | Description |
+|---|---|
+| `get_symbols` | List all functions, classes, and arrow functions defined in a file |
+| `find_symbol` | Find where a specific function or class is defined in a file |
+| `get_references` | Find all call sites of a function across all supported files in a directory |
+| `get_imports` | List all import statements in a file |
+| `run_tests` | Run tests using the appropriate test runner (pytest / Jest / Maven / Gradle) |
+| `get_lint_errors` | Lint a file and return structured errors (flake8 / ESLint / Checkstyle) |
+
+---
+
+### File System
+
 #### `list_directory`
 List contents of a directory.
 
