@@ -57,4 +57,7 @@ def node_text(node) -> str:
 
 
 def get_node_types(ext: str) -> dict:
-    return _NODE_TYPES.get(ext, {})
+    types = _NODE_TYPES.get(ext)
+    if types is None:
+        raise ValueError(f"No node types defined for extension: {ext}")
+    return types
