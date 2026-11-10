@@ -188,12 +188,22 @@ def run_tests(path: str) -> dict:
     else:
         cmd = ["python", "-m", "pytest", str(p), "-v", "--tb=short"]
 
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-        timeout=_TEST_TIMEOUT,
-    )
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=_TEST_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        return {
+            "path": str(p),
+            "runner": cmd[0],
+            "passed": False,
+            "exit_code": None,
+            "output": "",
+            "errors": f"Tests timed out after {_TEST_TIMEOUT}s",
+        }
     return {
         "path": str(p),
         "runner": cmd[0],
