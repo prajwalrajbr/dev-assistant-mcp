@@ -28,7 +28,7 @@ def _load(path: str):
 
 
 def find_symbol(path: str, name: str) -> dict:
-    """Find where a function or class named `name` is defined in a file."""
+    """Find where a specific function, class, or arrow function is defined in a source file. Supports Python, JavaScript, TypeScript, and Java."""
     tree, source, ext, err = _load(path)
     if err:
         return {"error": err}
@@ -66,7 +66,7 @@ def find_symbol(path: str, name: str) -> dict:
 
 
 def get_symbols(path: str) -> dict:
-    """List all functions, classes, and arrow functions defined in a file."""
+    """List all functions, classes, and arrow functions defined in a source file, sorted by line number. Supports Python, JavaScript, TypeScript, and Java."""
     tree, source, ext, err = _load(path)
     if err:
         return {"error": err}
@@ -104,7 +104,7 @@ def get_symbols(path: str) -> dict:
 
 
 def get_references(directory: str, name: str) -> dict:
-    """Find all call sites of `name` across all supported files in a directory."""
+    """Find all call sites of a function or method across all supported source files in a directory. Handles plain calls (foo()), attribute calls (obj.foo()), and Java constructor calls (new Foo()). Skips unreadable or binary files."""
     if err := check_path(directory, "dir"):
         return err
 
@@ -146,7 +146,7 @@ def get_references(directory: str, name: str) -> dict:
 
 
 def get_imports(path: str) -> dict:
-    """List all import statements in a file."""
+    """List all import statements in a source file, sorted by line number. Supports Python (import / from…import), JavaScript/TypeScript (ES module import), and Java (import declaration)."""
     tree, source, ext, err = _load(path)
     if err:
         return {"error": err}
@@ -174,7 +174,7 @@ def get_imports(path: str) -> dict:
 
 
 def run_tests(path: str) -> dict:
-    """Run tests for a file or directory using the appropriate test runner."""
+    """Run tests using the appropriate runner detected from the file or directory type: pytest for Python, Jest for JS/TS (package.json), Maven for Java (pom.xml), or Gradle (build.gradle). Runner commands and timeout are configurable via PYTHON_CMD, NODE_CMD, MAVEN_CMD, GRADLE_CMD, and TEST_TIMEOUT in .env."""
     if err := check_path(path):
         return err
 
@@ -217,7 +217,7 @@ def run_tests(path: str) -> dict:
 
 
 def get_lint_errors(path: str) -> dict:
-    """Run a linter on a file and return lint errors."""
+    """Lint a source file and return structured errors. Uses flake8 for Python, ESLint (via npx) for JavaScript/TypeScript, and Checkstyle for Java. Returns an empty errors list for clean files."""
     if err := check_path(path, "file"):
         return err
 

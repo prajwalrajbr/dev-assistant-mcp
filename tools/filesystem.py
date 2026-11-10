@@ -25,7 +25,7 @@ def _is_binary(path: Path) -> bool:
 
 
 def list_directory(path: str) -> dict:
-    """List contents of a directory."""
+    """List all files and subdirectories inside a directory, sorted alphabetically."""
     if err := check_path(path, "dir"):
         return err
 
@@ -38,7 +38,7 @@ def list_directory(path: str) -> dict:
 
 
 def read_file(path: str) -> dict:
-    """Read the full contents of a file."""
+    """Read the full text content of a file. Returns content and line count."""
     if err := check_path(path, "file"):
         return err
 
@@ -48,7 +48,7 @@ def read_file(path: str) -> dict:
 
 
 def write_file(path: str, content: str) -> dict:
-    """Write content to a file, creating parent directories if needed."""
+    """Write content to a file, creating parent directories if needed. Overwrites if the file already exists."""
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(content, encoding="utf-8")
@@ -56,7 +56,7 @@ def write_file(path: str, content: str) -> dict:
 
 
 def delete_file(path: str) -> dict:
-    """Move a file to the trash folder instead of permanently deleting it."""
+    """Soft-delete a file by moving it to the trash folder (TRASH_DIR) instead of permanently removing it. Appends a timestamp to the filename if a collision occurs in the trash."""
     if err := check_path(path, "file"):
         return err
 
@@ -76,7 +76,7 @@ def delete_file(path: str) -> dict:
 
 
 def move_file(src: str, dst: str) -> dict:
-    """Move or rename a file, creating destination parent directories if needed."""
+    """Move or rename a file. Creates destination parent directories if needed. Fails if the destination already exists."""
     if err := check_path(src, "file"):
         return err
 
@@ -92,7 +92,7 @@ def move_file(src: str, dst: str) -> dict:
 
 
 def search_files(directory: str, pattern: str, extensions: list[str] | None = None) -> dict:
-    """Search for a regex pattern across all files in a directory."""
+    """Search for a regex pattern across all text files in a directory tree. Skips binaries and noise directories (.git, node_modules, __pycache__, .venv, dist, build, target, .trash). Optionally filter by file extension."""
     if err := check_path(directory, "dir"):
         return err
 
