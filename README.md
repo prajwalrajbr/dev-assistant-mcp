@@ -50,6 +50,10 @@ Copy `.env.example` to `.env` and adjust values:
 | `TEST_TIMEOUT` | `60` | Timeout in seconds for `run_tests`. |
 | `TRASH_DIR` | `.trash` | Folder where deleted files are moved instead of being permanently removed. |
 | `CHECKSTYLE_CONFIG` | `/google_checks.xml` | Checkstyle config path. `/google_checks.xml` and `/sun_checks.xml` are bundled in the Checkstyle JAR. |
+| `PYTHON_CMD` | `python3` | Python executable used for pytest and flake8. |
+| `NODE_CMD` | `npx` | Node runner used for Jest and ESLint. |
+| `MAVEN_CMD` | `mvn` | Maven executable for Java test runs. |
+| `GRADLE_CMD` | `./gradlew` | Gradle wrapper command for Gradle test runs. |
 
 ---
 

@@ -11,6 +11,10 @@ load_dotenv()
 
 _TEST_TIMEOUT = int(os.getenv("TEST_TIMEOUT", 60))
 _CHECKSTYLE_CONFIG = os.getenv("CHECKSTYLE_CONFIG", "/google_checks.xml")
+_PYTHON_CMD = os.getenv("PYTHON_CMD", "python3")
+_NODE_CMD = os.getenv("NODE_CMD", "npx")
+_MAVEN_CMD = os.getenv("MAVEN_CMD", "mvn")
+_GRADLE_CMD = os.getenv("GRADLE_CMD", "./gradlew")
 
 def _load(path: str):
     p = Path(path)
@@ -178,13 +182,13 @@ def run_tests(path: str) -> dict:
     ext = p.suffix if p.is_file() else None
 
     if ext in (".js", ".ts") or (p.is_dir() and (p / "package.json").exists()):
-        cmd = ["npx", "jest", str(p), "--verbose"]
+        cmd = [_NODE_CMD, "jest", str(p), "--verbose"]
     elif ext == ".java" or (p.is_dir() and (p / "pom.xml").exists()):
-        cmd = ["mvn", "test", "-f", str(p / "pom.xml") if p.is_dir() else str(p.parent / "pom.xml")]
+        cmd = [_MAVEN_CMD, "test", "-f", str(p / "pom.xml") if p.is_dir() else str(p.parent / "pom.xml")]
     elif p.is_dir() and (p / "build.gradle").exists():
-        cmd = ["./gradlew", "test", "--project-dir", str(p)]
+        cmd = [_GRADLE_CMD, "test", "--project-dir", str(p)]
     else:
-        cmd = ["python", "-m", "pytest", str(p), "-v", "--tb=short"]
+        cmd = [_PYTHON_CMD, "-m", "pytest", str(p), "-v", "--tb=short"]
 
     try:
         result = subprocess.run(
@@ -230,7 +234,7 @@ def get_lint_errors(path: str) -> dict:
 
 def _lint_python(p: Path) -> dict:
     result = subprocess.run(
-        ["python", "-m", "flake8", str(p), "--format=%(row)d:%(col)d:%(code)s:%(text)s"],
+        [_PYTHON_CMD, "-m", "flake8", str(p), "--format=%(row)d:%(col)d:%(code)s:%(text)s"],
         capture_output=True,
         text=True,
     )
@@ -251,7 +255,7 @@ def _lint_python(p: Path) -> dict:
 
 def _lint_js_ts(p: Path) -> dict:
     result = subprocess.run(
-        ["npx", "eslint", str(p), "--format", "json"],
+        [_NODE_CMD, "eslint", str(p), "--format", "json"],
         capture_output=True,
         text=True,
     )
