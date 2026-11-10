@@ -260,19 +260,21 @@ def _lint_js_ts(p: Path) -> dict:
         text=True,
     )
     errors = []
-    try:
-        data = json.loads(result.stdout)
-        for file_result in data:
-            for msg in file_result.get("messages", []):
-                errors.append({
-                    "line": msg.get("line"),
-                    "col": msg.get("column"),
-                    "code": msg.get("ruleId", "unknown"),
-                    "message": msg.get("message"),
-                    "severity": "error" if msg.get("severity") == 2 else "warning",
-                })
-    except (json.JSONDecodeError, KeyError):
-        errors.append({"raw": result.stdout})
+    raw = result.stdout.strip()
+    if raw:
+        try:
+            data = json.loads(raw)
+            for file_result in data:
+                for msg in file_result.get("messages", []):
+                    errors.append({
+                        "line": msg.get("line"),
+                        "col": msg.get("column"),
+                        "code": msg.get("ruleId", "unknown"),
+                        "message": msg.get("message"),
+                        "severity": "error" if msg.get("severity") == 2 else "warning",
+                    })
+        except (json.JSONDecodeError, KeyError):
+            errors.append({"raw": raw})
     return {"file": str(p), "linter": "eslint", "errors": errors, "count": len(errors)}
 
 
