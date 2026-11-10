@@ -8,7 +8,7 @@ from tools import check_path
 
 load_dotenv()
 
-_TRASH_DIR = os.getenv("TRASH_DIR", ".trash")
+_TRASH_DIR = (Path(__file__).parent.parent / os.getenv("TRASH_DIR", ".trash")).resolve()
 
 _SKIP_DIRS = {
     ".git", "node_modules", "__pycache__", ".venv", "venv", "env",
@@ -62,15 +62,16 @@ def delete_file(path: str) -> dict:
 
     p = Path(path)
     trash = Path(_TRASH_DIR)
-    trash.mkdir(parents=True, exist_ok=True)
 
-    # avoid collisions: append timestamp if a file with the same name already exists
     dest = trash / p.name
-    if dest.exists():
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        dest = trash / f"{p.stem}_{timestamp}{p.suffix}"
-
-    shutil.move(str(p), dest)
+    try:
+        trash.mkdir(parents=True, exist_ok=True)
+        if dest.exists():
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            dest = trash / f"{p.stem}_{timestamp}{p.suffix}"
+        shutil.move(str(p), dest)
+    except Exception as e:
+        return {"error": f"Could not move file to trash: {e}"}
     return {"original": str(p), "moved_to": str(dest), "trash_dir": str(trash)}
 
 
