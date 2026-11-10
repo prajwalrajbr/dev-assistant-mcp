@@ -10,6 +10,19 @@ load_dotenv()
 
 _TRASH_DIR = os.getenv("TRASH_DIR", ".trash")
 
+_SKIP_DIRS = {
+    ".git", "node_modules", "__pycache__", ".venv", "venv", "env",
+    "dist", "build", "target", ".trash",
+}
+
+
+def _is_binary(path: Path) -> bool:
+    try:
+        with path.open("rb") as f:
+            return b"\x00" in f.read(512)
+    except Exception:
+        return True
+
 
 def list_directory(path: str) -> dict:
     """List contents of a directory."""
@@ -77,7 +90,7 @@ def move_file(src: str, dst: str) -> dict:
     return {"src": str(src_path), "dst": str(dst_path)}
 
 
-def search_files(directory: str, pattern: str) -> dict:
+def search_files(directory: str, pattern: str, extensions: list[str] | None = None) -> dict:
     """Search for a regex pattern across all files in a directory."""
     if err := check_path(directory, "dir"):
         return err
@@ -91,6 +104,12 @@ def search_files(directory: str, pattern: str) -> dict:
     matches = []
     for file in p.rglob("*"):
         if not file.is_file():
+            continue
+        if any(part in _SKIP_DIRS for part in file.parts):
+            continue
+        if _is_binary(file):
+            continue
+        if extensions and file.suffix.lower() not in extensions:
             continue
         try:
             content = file.read_text(encoding="utf-8", errors="replace")
