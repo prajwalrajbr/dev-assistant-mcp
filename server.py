@@ -21,4 +21,9 @@ mcp.tool()(run_tests)
 mcp.tool()(get_lint_errors)
 
 if __name__ == "__main__":
-    mcp.run()
+    import argparse
+    parser = argparse.ArgumentParser(description="dev-assistant MCP server")
+    parser.add_argument("--transport", choices=["stdio", "sse"], default="stdio")
+    parser.add_argument("--port", type=int, default=8000)
+    args = parser.parse_args()
+    mcp.run(transport=args.transport, port=args.port)
